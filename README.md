@@ -140,3 +140,58 @@ The sample catalog data is defined in [catalog.json](https://github.com/dotnet/e
 ## eShop on Azure
 
 For a version of this app configured for deployment on Azure, please view [the eShop on Azure](https://github.com/Azure-Samples/eShopOnAzure) repo.
+
+## Work developed for the project
+
+### Add dependencies
+
+At src/eShop.AppHost/
+
+```sh
+dotnet add package OpenTelemetry
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+dotnet add package OpenTelemetry.Exporter.Jaeger
+dotnet add package OpenTelemetry.Extensions.Hosting
+dotnet add package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add package OpenTelemetry.Instrumentation.Http
+dotnet add package OpenTelemetry.Instrumentation.SqlClient
+```
+
+### Run Jaeger
+
+```sh
+docker run --rm --name jaeger \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 9411:9411 \
+  jaegertracing/jaeger:2.0.0 \
+  --set receivers.otlp.protocols.http.endpoint=0.0.0.0:4318 \
+  --set receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317
+```
+
+### Add OpenTelemetry libraries
+
+At src/eShop.AppHost/Program.cs
+
+```csharp
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Exporter;
+
+// OpenTelemetry
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracerProviderBuilder => tracerProviderBuilder
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddSqlClientInstrumentation()
+        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("eShop"))
+        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317")));
+```
+
+
