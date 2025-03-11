@@ -15,7 +15,11 @@ builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddSqlClientInstrumentation()
         .AddSource("Basket.API")
-        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317")));
+        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317")))
+    .WithMetrics(metricsProviderBuilder => metricsProviderBuilder
+        .AddAspNetCoreInstrumentation()
+        .AddMeter("Basket.API")
+        .AddPrometheusExporter());
 
 
 builder.AddBasicServiceDefaults();
@@ -24,6 +28,8 @@ builder.AddApplicationServices();
 builder.Services.AddGrpc();
 
 var app = builder.Build();
+
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapDefaultEndpoints();
 

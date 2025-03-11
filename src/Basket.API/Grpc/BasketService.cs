@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using eShop.Basket.API.Repositories;
 using eShop.Basket.API.Extensions;
 using eShop.Basket.API.Model;
@@ -9,14 +10,21 @@ public class BasketService(
     IBasketRepository repository,
     ILogger<BasketService> logger) : Basket.BasketBase
 {
+    private static readonly ActivitySource ActivitySource = new("Basket.API");
+
     [AllowAnonymous]
     public override async Task<CustomerBasketResponse> GetBasket(GetBasketRequest request, ServerCallContext context)
     {
+        using var activity = ActivitySource.StartActivity("GetBasket");
+
         var userId = context.GetUserIdentity();
         if (string.IsNullOrEmpty(userId))
         {
             return new();
         }
+
+        activity?.SetTag("User ID", userId);
+        activity?.SetTag("Request", request);
 
         if (logger.IsEnabled(LogLevel.Debug))
         {
@@ -35,11 +43,24 @@ public class BasketService(
 
     public override async Task<CustomerBasketResponse> UpdateBasket(UpdateBasketRequest request, ServerCallContext context)
     {
+        using var activity = ActivitySource.StartActivity("UpdateBasket");
+
         var userId = context.GetUserIdentity();
         if (string.IsNullOrEmpty(userId))
         {
             ThrowNotAuthenticated();
         }
+
+        activity?.SetTag("User ID", userId);
+        activity?.SetTag("Request", request);
+        var basketItems = request.Items
+            .Select(item => "Product " + item.ProductId + " (" + item.Quantity +")")
+            .ToList();
+
+        var basketJson = JsonSerializer.Serialize(basketItems);
+
+        activity?.SetTag("Basket Items", basketJson);
+        activity?.SetTag("Total Unique Items", request.Items.Count);
 
         if (logger.IsEnabled(LogLevel.Debug))
         {
@@ -58,11 +79,16 @@ public class BasketService(
 
     public override async Task<DeleteBasketResponse> DeleteBasket(DeleteBasketRequest request, ServerCallContext context)
     {
+        using var activity = ActivitySource.StartActivity("DeleteBasket");
+
         var userId = context.GetUserIdentity();
         if (string.IsNullOrEmpty(userId))
         {
             ThrowNotAuthenticated();
         }
+
+        activity?.SetTag("User ID", userId);
+        activity?.SetTag("Request", request);
 
         await repository.DeleteBasketAsync(userId);
         return new();

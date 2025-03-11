@@ -145,7 +145,7 @@ For a version of this app configured for deployment on Azure, please view [the e
 
 ### Add dependencies
 
-At src/eShop.AppHost/
+At src/Basket.API/
 
 ```sh
 dotnet add package OpenTelemetry
@@ -173,7 +173,9 @@ docker run --rm --name jaeger \
   --set receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317
 ```
 
-### Add OpenTelemetry libraries
+Jaeger UI is available at http://localhost:16686
+
+### Add OpenTelemetry libraries to connect to Jaeger
 
 At src/eShop.AppHost/Program.cs
 
@@ -186,12 +188,20 @@ using OpenTelemetry.Exporter;
 
 // OpenTelemetry
 builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService("Basket.API"))
     .WithTracing(tracerProviderBuilder => tracerProviderBuilder
         .AddAspNetCoreInstrumentation()
+        .AddGrpcClientInstrumentation()
         .AddHttpClientInstrumentation()
         .AddSqlClientInstrumentation()
-        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("eShop"))
+        .AddSource("Basket.API")
         .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317")));
 ```
 
+### Personalize metrics
+Add tags to BasketService to the functions related to the basket actions
+
+Result:
+<!-- falta me adicionar images -->
 
