@@ -205,3 +205,40 @@ Add tags to BasketService to the functions related to the basket actions
 Result:
 <!-- falta me adicionar images -->
 
+### Grafana
+
+#### Start Prometheus
+
+```sh
+docker run -d --name prometheus -p 9090:9090 prom/prometheus
+```
+
+Add the dependency to the project
+
+```sh
+dotnet add package OpenTelemetry.Exporter.Prometheus
+```
+
+
+And add this configuration to the builder in Program.cs
+
+```csharp
+  .WithMetrics(metricsProviderBuilder => metricsProviderBuilder
+      .AddAspNetCoreInstrumentation()
+      .AddMeter("Basket.API")
+      .AddPrometheusExporter());
+```
+
+Prometheus UI is available at http://localhost:9090
+
+#### Start Grafana
+
+```sh
+docker run --rm --name grafana -d -p 3000:3000 grafana/grafana
+```
+
+Grafana UI is available at http://localhost:3000
+
+
+
+

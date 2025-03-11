@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  
+  - job_name: 'basket-api'
+    scheme: http  # Alterar para "https" se o serviço usar HTTPS
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:5221']
+
+  - job_name: 'webapp'
+    scheme: http  # Alterar para "https" se necessário
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:7298']  # Porta da WebApp
